@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>For You ❤️</title>
+
+  <style>
+    :root{
+      --red:#e11d48;
+      --paper:#fff7fb;
+      --shadow: rgba(0,0,0,.18);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: radial-gradient(circle at top, #fff 0%, #ffe4ef 45%, #ffd1e3 100%);
+      overflow:hidden;
+    }
+
+    .wrap{
+      width:min(92vw, 430px);
+      text-align:center;
+      position:relative;
+      z-index:2;
+    }
+
+    h1{
+      margin:0 0 16px;
+      color:#7f1d1d;
+      font-weight:800;
+      font-size: clamp(20px, 4.5vw, 26px);
+    }
+
+    /* Confetti */
+    .hearts{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:1;
+      overflow:hidden;
+    }
+    .heart{
+      position:absolute;
+      top:-40px;
+      font-size: 18px;
+      animation: fall linear forwards;
+      opacity:.95;
+      user-select:none;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.08));
+    }
+    @keyframes fall{
+      to{
+        transform: translateY(calc(100vh + 80px)) rotate(360deg);
+        opacity: 0.9;
+      }
+    }
+
+    /* Stage */
+    .envelope-area{
+      position:relative;
+      width: 340px;
+      max-width: 92vw;
+      height: 420px;
+      margin: 0 auto;
+    }
+
+    .envelope{
+      position:absolute;
+      left:50%;
+      top:52%;
+      transform:translate(-50%,-50%);
+      width: 340px;
+      height: 220px;
+      border-radius: 16px;
+      background: linear-gradient(145deg, #fff, #ffe0ea);
+      box-shadow: 0 18px 40px var(--shadow);
+      overflow:hidden;
+      perspective:1200px;
+      outline: 2px solid rgba(225,29,72,.10);
+      outline-offset: -2px;
+    }
+
+    /* Front pocket (clean, no weird wings) */
+    .pocket{
+      position:absolute;
+      inset:-1px; /* kills tiny seams */
+      border-radius:16px;
+      background: linear-gradient(145deg, #ffd4e2, #fff);
+      clip-path: polygon(0 44%, 50% 72%, 100% 44%, 100% 100%, 0 100%);
+      z-index:7;
+    }
+
+    /* Hide folds completely (they caused the weird sides) */
+    .fold-left, .fold-right{
+      opacity:0;
+      pointer-events:none;
+      position:absolute;
+      inset:0;
+    }
+
+    /* ✅ Flap FIXED (THIS was your main issue) */
+    .flap{
+      position:absolute;
+      left:-2px; right:-2px; top:-2px;
+      height:62%;                 /* ✅ NOT 100% */
+      background: linear-gradient(145deg, #ffccd9, #fff);
+      clip-path: polygon(0 0, 100% 0, 50% 88%);
+
+      border-radius:16px 16px 0 0; /* ✅ matches envelope corners */
+      overflow:hidden;
+
+      transform-origin: top center;
+      transform: rotateX(0deg);     /* ✅ default state */
+      backface-visibility:hidden;
+
+      transition: transform 900ms cubic-bezier(.2,.9,.25,1.1);
+      z-index:9;
+
+      -webkit-mask-image: -webkit-radial-gradient(white, black);
+    }
+
+    .seal{
+      position:absolute;
+      left:50%; top:60%;
+      transform:translate(-50%,-50%);
+      width:58px; height:58px;
+      border-radius:999px;
+      background: linear-gradient(145deg, var(--red), #be123c);
+      box-shadow: 0 10px 20px rgba(225,29,72,.35);
+      display:grid;
+      place-items:center;
+      color:white;
+      font-size:22px;
+      z-index:10;
+      transition: transform 400ms ease, opacity 400ms ease;
+      user-select:none;
+    }
+
+    /* Letter */
+    .letter-img{
+      position:absolute;
+      left:50%;
+      top:60%;
+
+      width: 92%;
+      height: 360px;
+      max-height: 75vh;
+
+      transform: translate(-50%, -50%) translateY(190px);
+
+      border-radius: 18px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.18);
+      border: 1px solid rgba(225,29,72,.15);
+
+      object-fit: contain;
+      background: var(--paper);
+
+      z-index:5;
+      will-change: transform;
+    }
+
+    .btns{
+      margin-top:18px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    button{
+      border:none;
+      padding: 12px 18px;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight:800;
+      font-size: 14px;
+      box-shadow: 0 10px 20px rgba(0,0,0,.12);
+    }
+    .open-btn{ background: linear-gradient(145deg, var(--red), #be123c); color:white; }
+    .replay-btn{ background:white; color:var(--red); border: 1px solid rgba(225,29,72,.25); }
+
+    /* OPEN */
+    .envelope.open{ overflow: visible; }
+
+    .envelope.open .flap{
+      transform: rotateX(-180deg);
+    }
+
+    .envelope.open .seal{
+      opacity:0;
+      transform: translate(-50%,-50%) scale(.6);
+    }
+
+    .envelope.open .letter-img{
+      transform: translate(-50%, -50%) translateY(-160px);
+      z-index:20;
+      transition: transform 950ms cubic-bezier(.2,.9,.25,1.1);
+    }
+
+    /* Smooth closing */
+    .envelope:not(.open) .letter-img{
+      transition: transform 850ms cubic-bezier(.35,.05,.2,1);
+    }
+
+    @media (max-width: 380px){
+      .envelope-area{height: 380px;}
+      .letter-img{ height: 320px; }
+      .envelope.open .letter-img{
+        transform: translate(-50%, -50%) translateY(-140px);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="hearts" id="hearts"></div>
+
+  <audio id="bgm" loop>
+    <source src="song.mp3" type="audio/mpeg">
+  </audio>
+
+  <div class="wrap">
+    <h1>Open this, my love 💗</h1>
+
+    <div class="envelope-area">
+      <div class="envelope" id="envelope">
+        <div class="flap"></div>
+        <div class="seal">💌</div>
+
+        <img class="letter-img" src="letter.png" alt="Love Letter"/>
+
+        <div class="pocket"></div>
+        <div class="fold-left"></div>
+        <div class="fold-right"></div>
+      </div>
+    </div>
+
+    <div class="btns">
+      <button class="open-btn" id="openBtn">Open the letter 💖</button>
+      <button class="replay-btn" id="replayBtn">Replay ✨</button>
+    </div>
+  </div>
+
+  <script>
+    const envelope = document.getElementById("envelope");
+    const openBtn = document.getElementById("openBtn");
+    const replayBtn = document.getElementById("replayBtn");
+    const heartsBox = document.getElementById("hearts");
+    const bgm = document.getElementById("bgm");
+
+    let heartTimer = null;
+
+    function burstConfetti(durationMs = 8000){
+      stopConfetti();
+      const start = Date.now();
+
+      heartTimer = setInterval(() => {
+        const spawn = 4;
+        for(let i=0;i<spawn;i++){
+          const heart = document.createElement("div");
+          heart.className = "heart";
+          heart.textContent = ["❤️","💗","💖","💕","💘"][Math.floor(Math.random()*5)];
+          heart.style.left = (Math.random() * 100) + "vw";
+          heart.style.fontSize = (14 + Math.random() * 22) + "px";
+          const fallTime = 2.8 + Math.random() * 3.8;
+          heart.style.animationDuration = fallTime + "s";
+          heartsBox.appendChild(heart);
+          setTimeout(() => heart.remove(), fallTime * 1000 + 400);
+        }
+
+        if(Date.now() - start > durationMs){
+          stopConfetti();
+        }
+      }, 160);
+    }
+
+    function stopConfetti(){
+      if(heartTimer){
+        clearInterval(heartTimer);
+        heartTimer = null;
+      }
+    }
+
+    async function playMusic(){
+      try{ await bgm.play(); }catch(e){}
+    }
+
+    openBtn.addEventListener("click", () => {
+      envelope.classList.add("open");
+      burstConfetti(9000);
+      playMusic();
+      openBtn.disabled = true;
+      openBtn.textContent = "Opened 💘";
+    });
+
+replayBtn.addEventListener("click", () => {
+  // add closing easing
+  envelope.classList.add("closing");
+
+  // start closing animation
+  envelope.classList.remove("open");
+
+  setTimeout(() => {
+    // cleanup after animation finishes
+    envelope.classList.remove("closing");
+
+    stopConfetti();
+    heartsBox.innerHTML = "";
+    bgm.pause();
+    bgm.currentTime = 0;
+
+    openBtn.disabled = false;
+    openBtn.textContent = "Open the letter 💖";
+  }, 850); // match the closing transition timing
+});
+
+  </script>
+</body>
+</html>
