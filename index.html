@@ -67,14 +67,14 @@
       position:relative;
       width: 340px;
       max-width: 92vw;
-      height: 420px;
+      height: 440px; /* ✅ slightly taller for phone */
       margin: 0 auto;
     }
 
     .envelope{
       position:absolute;
       left:50%;
-      top:52%;
+      top:62%; /* ✅ moved DOWN so letter won’t cover it */
       transform:translate(-50%,-50%);
       width: 340px;
       height: 220px;
@@ -87,17 +87,15 @@
       outline-offset: -2px;
     }
 
-    /* Front pocket (clean, no weird wings) */
     .pocket{
       position:absolute;
-      inset:-1px; /* kills tiny seams */
+      inset:-1px;
       border-radius:16px;
       background: linear-gradient(145deg, #ffd4e2, #fff);
       clip-path: polygon(0 44%, 50% 72%, 100% 44%, 100% 100%, 0 100%);
       z-index:7;
     }
 
-    /* Hide folds completely (they caused the weird sides) */
     .fold-left, .fold-right{
       opacity:0;
       pointer-events:none;
@@ -105,24 +103,19 @@
       inset:0;
     }
 
-    /* ✅ Flap FIXED (THIS was your main issue) */
     .flap{
       position:absolute;
       left:-2px; right:-2px; top:-2px;
-      height:62%;                 /* ✅ NOT 100% */
+      height:62%;
       background: linear-gradient(145deg, #ffccd9, #fff);
       clip-path: polygon(0 0, 100% 0, 50% 88%);
-
-      border-radius:16px 16px 0 0; /* ✅ matches envelope corners */
+      border-radius:16px 16px 0 0;
       overflow:hidden;
-
       transform-origin: top center;
-      transform: rotateX(0deg);     /* ✅ default state */
+      transform: rotateX(0deg);
       backface-visibility:hidden;
-
       transition: transform 900ms cubic-bezier(.2,.9,.25,1.1);
       z-index:9;
-
       -webkit-mask-image: -webkit-radial-gradient(white, black);
     }
 
@@ -143,17 +136,19 @@
       user-select:none;
     }
 
-    /* Letter */
+    /* ✅ BIG + readable, but NOT too tall */
     .letter-img{
       position:absolute;
       left:50%;
       top:60%;
 
-      width: 92%;
-      height: 360px;
-      max-height: 75vh;
+      width: 94vw;
+      max-width: 430px;
 
-      transform: translate(-50%, -50%) translateY(190px);
+      height: auto;
+      max-height: 70vh; /* ✅ prevents envelope being covered */
+
+      transform: translate(-50%, -50%) translateY(170px);
 
       border-radius: 18px;
       box-shadow: 0 25px 60px rgba(0,0,0,.18);
@@ -164,6 +159,7 @@
 
       z-index:5;
       will-change: transform;
+      transition: transform 900ms cubic-bezier(.2,.9,.25,1.1);
     }
 
     .btns{
@@ -198,8 +194,9 @@
       transform: translate(-50%,-50%) scale(.6);
     }
 
+    /* ✅ less aggressive lift so it doesn’t overlap envelope */
     .envelope.open .letter-img{
-      transform: translate(-50%, -50%) translateY(-160px);
+      transform: translate(-50%, -50%) translateY(-32vh);
       z-index:20;
       transition: transform 950ms cubic-bezier(.2,.9,.25,1.1);
     }
@@ -209,12 +206,12 @@
       transition: transform 850ms cubic-bezier(.35,.05,.2,1);
     }
 
-    @media (max-width: 380px){
-      .envelope-area{height: 380px;}
-      .letter-img{ height: 320px; }
-      .envelope.open .letter-img{
-        transform: translate(-50%, -50%) translateY(-140px);
-      }
+    /* closing easing (replay smooth) */
+    .envelope.closing .flap{
+      transition: transform 750ms cubic-bezier(.35,.05,.2,1);
+    }
+    .envelope.closing .letter-img{
+      transition: transform 780ms cubic-bezier(.35,.05,.2,1);
     }
   </style>
 </head>
@@ -293,34 +290,32 @@
     }
 
     openBtn.addEventListener("click", () => {
+      if(envelope.classList.contains("closing")) return;
+
       envelope.classList.add("open");
       burstConfetti(9000);
       playMusic();
+
       openBtn.disabled = true;
       openBtn.textContent = "Opened 💘";
     });
 
-replayBtn.addEventListener("click", () => {
-  // add closing easing
-  envelope.classList.add("closing");
+    replayBtn.addEventListener("click", () => {
+      envelope.classList.add("closing");
+      envelope.classList.remove("open");
 
-  // start closing animation
-  envelope.classList.remove("open");
+      setTimeout(() => {
+        envelope.classList.remove("closing");
 
-  setTimeout(() => {
-    // cleanup after animation finishes
-    envelope.classList.remove("closing");
+        stopConfetti();
+        heartsBox.innerHTML = "";
+        bgm.pause();
+        bgm.currentTime = 0;
 
-    stopConfetti();
-    heartsBox.innerHTML = "";
-    bgm.pause();
-    bgm.currentTime = 0;
-
-    openBtn.disabled = false;
-    openBtn.textContent = "Open the letter 💖";
-  }, 850); // match the closing transition timing
-});
-
+        openBtn.disabled = false;
+        openBtn.textContent = "Open the letter 💖";
+      }, 850);
+    });
   </script>
 </body>
 </html>
